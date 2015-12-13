@@ -4,22 +4,21 @@ import java.net.URI;
 
 import javax.swing.SwingUtilities;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 import com.google.common.util.concurrent.ListenableFuture;
 import com.wildbamaboy.beam.automc.gui.GuiLogin;
 import com.wildbamaboy.beam.automc.gui.GuiSplash;
 import com.wildbamaboy.beam.automc.util.CallResult;
-import com.wildbamaboy.beam.automc.util.NetUtils;
 
 import pro.beam.api.BeamAPI;
+import pro.beam.api.resource.BeamUser;
+import pro.beam.api.services.impl.UsersService;
 import pro.beam.interactive.robot.Robot;
 import pro.beam.interactive.robot.RobotBuilder;
 
 public class AutoMC 
 {
 	private static BeamAPI beam;
+	private static BeamUser user;
 	private static Robot robot;
 
 	public static void main(String[] args)
@@ -38,42 +37,17 @@ public class AutoMC
 
 	public static CallResult loginToTetris(String username, String password)
 	{
-		// Lookup the user's ID.
-		JSONArray searchResults = NetUtils.jsonArrayGET("https://beam.pro/api/v1/users/search?query=" + username);
-		int channelId = -1;
-
-		// Check for errors from jsonArrayGET.
-		if (searchResults.getJSONObject(0).has("error"))
-		{
-			return CallResult.False(searchResults.getJSONObject(0).getString("error"));
-		}
-
-		// Find the username and make sure it exactly equals the provided one.
-		for (int i = 0; i < searchResults.length(); i++)
-		{
-			JSONObject obj = searchResults.getJSONObject(i);
-
-			if (obj.getString("username").equalsIgnoreCase(username))
-			{
-				channelId = obj.getInt("id");
-				break;
-			}
-		}
-
-		// Handle case when it's not found.
-		if (channelId == -1)
-		{
-			return CallResult.False("Your username or password is incorrect.");
-		}
-
-		ListenableFuture<Robot> future = new RobotBuilder()
-				.username(username)
-				.password(password)
-				.channel(channelId)
-				.build(beam);
-
 		try
 		{
+			BeamUser user = beam.use(UsersService.class).login(username, password).checkedGet();
+
+			ListenableFuture<Robot> future = new RobotBuilder()
+					.username(username)
+					.password(password)
+					.channel(user.channel.id)
+					.build(beam);
+
+
 			robot = future.get();
 		}
 
