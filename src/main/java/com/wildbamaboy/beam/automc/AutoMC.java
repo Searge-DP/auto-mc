@@ -4,14 +4,19 @@ import java.net.URI;
 
 import javax.swing.SwingUtilities;
 
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.wildbamaboy.beam.automc.gui.GuiLogin;
 import com.wildbamaboy.beam.automc.gui.GuiSplash;
+import com.wildbamaboy.beam.automc.input.KeyListener;
+import com.wildbamaboy.beam.automc.input.MouseListener;
 import com.wildbamaboy.beam.automc.util.CallResult;
 
 import pro.beam.api.BeamAPI;
 import pro.beam.api.resource.BeamUser;
 import pro.beam.api.services.impl.UsersService;
+import pro.beam.interactive.net.packet.Protocol;
 import pro.beam.interactive.robot.Robot;
 import pro.beam.interactive.robot.RobotBuilder;
 
@@ -26,7 +31,16 @@ public class AutoMC
 		try
 		{
 			beam = new BeamAPI(new URI("https://lab.beam.pro/api/v1/"), args[0], args[1]);
-			loginToTetris(args[2], args[3]);
+			
+			if (loginToTetris(args[2], args[3]).getSuccessful())
+			{
+				
+			}
+			
+			else
+			{
+				System.out.println("FAILED");
+			}
 		}
 
 		catch (Exception e)
@@ -47,8 +61,24 @@ public class AutoMC
 					.channel(user.channel.id)
 					.build(beam);
 
-
 			robot = future.get();
+			
+			 Futures.addCallback(future, new FutureCallback<Robot>() 
+			 {
+		            @Override 
+		            public void onSuccess(Robot robot) 
+		            {
+		                robot.on(Protocol.Report.class, new MouseListener());
+		                robot.on(Protocol.Report.class, new KeyListener());
+		            }
+
+		            @Override 
+		            public void onFailure(Throwable throwable) 
+		            {
+		                System.err.println("Error experienced in connecting to Beam.");
+		                throwable.printStackTrace();
+		            }
+		        });
 		}
 
 		catch (Exception e)
@@ -90,7 +120,7 @@ public class AutoMC
 
 		return loginGui;
 	}
-
+	
 	public static void wait(int seconds)
 	{
 		try
