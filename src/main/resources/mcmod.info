@@ -1,0 +1,16 @@
+[
+{
+  "modid": "automc",
+  "name": "AutoMC",
+  "description": "An entirely autonomous Minecraft bot designed for beam.pro.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["WildBamaBoy"],
+  "credits": "Beam, Matt, Gabe, all the other cool people.",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]

@@ -1,53 +1,22 @@
-# Windows image file caches
-Thumbs.db
-ehthumbs.db
-
-# Folder config file
-Desktop.ini
-
-# Recycle Bin used on file shares
-$RECYCLE.BIN/
-
-# Windows Installer files
-*.cab
-*.msi
-*.msm
-*.msp
-
-# Windows shortcuts
-*.lnk
-
-# =========================
-# Operating System Files
-# =========================
-
-# OSX
-# =========================
-
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Thumbnails
-._*
-
-# Files that might appear in the root of a volume
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-
-# Directories potentially created on remote AFP share
-.AppleDB
-.AppleDesktop
-Network Trash Folder
-Temporary Items
-.apdisk
-*.class
-.classpath
-*.project
-.settings/org.eclipse.jdt.core.prefs
-*.prefs
-target/*
+/*
+/src/main/java/radixcore/*
+/lib/*
+!/.gitignore
+!/gradle/
+!/gradle/*
+!/gradle*
+!/src/
+!/src/*
+!/lib
+!/gfx
+!/*.gradle
+!/*.md
+!setupws.bat
+!version.properties
+.gradle
+gitlog-to-changelog
+CHANGELOG
+*.jar
+gradle/wrapper/gradle-wrapper.properties
+gradlew
+*.bat

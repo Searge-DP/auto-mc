@@ -16,6 +16,8 @@ import com.wildbamaboy.beam.automc.util.FrameUtils;
 @SuppressWarnings("serial")
 public class GuiLogin extends JFrame implements ActionListener
 {
+	public static boolean isOpen;
+	
 	private static final int WIDTH = 360;
 	private static final int HEIGHT = 200;
 	
@@ -37,7 +39,7 @@ public class GuiLogin extends JFrame implements ActionListener
 		this.setLocationRelativeTo(null);
 		this.setResizable(false);
 		this.setLayout(null);
-		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		this.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 		
 		//Initialize components.
 		int xLoc = 40;
@@ -90,6 +92,24 @@ public class GuiLogin extends JFrame implements ActionListener
 			{
 				password[i] = 0;
 			}
+			
+			setIsOpen(false);
 		}
+	}
+	
+	public void setIsOpen(boolean value)
+	{
+		isOpen = value;
+		this.setVisible(isOpen);
+	}
+	
+	public String getUsername()
+	{
+		return textBoxUsername.getText();
+	}
+	
+	public char[] getPassword()
+	{
+		return textBoxPassword.getPassword();
 	}
 }
