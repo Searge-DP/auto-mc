@@ -2,7 +2,7 @@ AutoMC
 =====================
 AutoMC is a Minecraft mod that allows completely autonomous control of Minecraft when using the interactive livestreaming platform developed by Beam.
 
-An active streamer is not required to play the game - streamers may play completely by themselves.
+An active streamer is not required to play the game - viewers may play completely by themselves.
 
 ##Download
 Compiled versions of AutoMC may be found here: http://files.radix-shock.com/automc/
