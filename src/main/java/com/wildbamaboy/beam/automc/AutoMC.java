@@ -1,7 +1,5 @@
 package com.wildbamaboy.beam.automc;
 
-import java.net.URI;
-
 import com.wildbamaboy.beam.automc.command.CommandAutoMC;
 
 import cpw.mods.fml.common.Mod;
@@ -14,7 +12,7 @@ import pro.beam.api.BeamAPI;
 import pro.beam.api.resource.BeamUser;
 import pro.beam.interactive.robot.Robot;
 
-@Mod(modid = "AutoMC", name = "AutoMC", version = "0.9.0-BETA")
+@Mod(modid = "AutoMC", name = "AutoMC", version = "0.9.1-BETA")
 public class AutoMC
 {
 	@Instance
@@ -29,7 +27,7 @@ public class AutoMC
 	{
 		try
 		{
-			beam = new BeamAPI(new URI("https://lab.beam.pro/api/v1/"), "user", "password");
+			beam = new BeamAPI();
 		}
 
 		catch (Exception e)
