@@ -46,9 +46,9 @@ configurations {
 }
 
 dependencies {
-    beam "pro.beam:interactive:1.0.5-SNAPSHOT"
+    beam "pro.beam:interactive:1.1.1-SNAPSHOT"
 	beam "org.json:json:20151123"
-    compile "pro.beam:interactive:1.0.5-SNAPSHOT"
+    compile "pro.beam:interactive:1.1.1-SNAPSHOT"
 	compile "org.json:json:20151123"
 }
 

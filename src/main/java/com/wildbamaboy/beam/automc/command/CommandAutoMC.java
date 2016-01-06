@@ -23,6 +23,8 @@ import net.minecraft.util.ChatComponentText;
 import pro.beam.api.exceptions.BeamException;
 import pro.beam.api.exceptions.user.WrongPasswordException;
 import pro.beam.api.resource.BeamUser;
+import pro.beam.api.resource.tetris.RobotInfo;
+import pro.beam.api.services.impl.TetrisService;
 import pro.beam.api.services.impl.UsersService;
 import pro.beam.interactive.net.packet.Protocol;
 import pro.beam.interactive.robot.Robot;
@@ -140,6 +142,7 @@ public class CommandAutoMC extends CommandBase
 
 				try
 				{
+					System.out.println("Logging in as " + loginGui.getUsername());
 					user = AutoMC.instance.getBeamAPI().use(UsersService.class)
 							.login(loginGui.getUsername(), String.valueOf(loginGui.getPassword())).checkedGet();
 				}
@@ -149,12 +152,12 @@ public class CommandAutoMC extends CommandBase
 					//Handle any problems we may encounter.
 					if (e instanceof WrongPasswordException)
 					{
-						addChatMessage(Minecraft.getMinecraft().thePlayer, Color.RED + "Failed to log in - wrong username or password.");	
+						addChatMessage(Minecraft.getMinecraft().thePlayer, Color.RED + "Wrong username or password.");	
 					}
 
 					else
 					{
-						addChatMessage(Minecraft.getMinecraft().thePlayer, Color.RED + "An unknown error occurred: " + e.getClass().getSimpleName());
+						addChatMessage(Minecraft.getMinecraft().thePlayer, Color.RED + "An unknown login error occurred.");
 						e.printStackTrace(System.err);
 					}
 				}
@@ -163,19 +166,22 @@ public class CommandAutoMC extends CommandBase
 				Minecraft.getMinecraft().setIngameFocus();
 
 				//No matter what, set the Beam user for this mod instance.
+				System.out.println("Setting authenticated Beam user " + user.username + ":" + user.id);
 				AutoMC.instance.setBeamUser(user);
 
 				if (user != null) //And if the user is not null, we logged in. Notify the player.
 				{
 					addChatMessage(Minecraft.getMinecraft().thePlayer, Color.GREEN + "Successfully logged in to Beam.");
-
+					
 					//Construct the robot.
 					addChatMessage(Minecraft.getMinecraft().thePlayer, Color.YELLOW + "Starting bot...");
 
+					System.out.println("Building robot with credentials: " + user.username + ", " + user.channel.id);
+					
 					ListenableFuture<Robot> future = new RobotBuilder()
 							.username(user.username)
 							.password(String.valueOf(loginGui.getPassword()))
-							.channel(user.channel.id)
+							.channel(user.channel)
 							.build(AutoMC.instance.getBeamAPI());
 
 					try
@@ -197,7 +203,7 @@ public class CommandAutoMC extends CommandBase
 							@Override 
 							public void onFailure(Throwable throwable) 
 							{
-								addChatMessage(Minecraft.getMinecraft().thePlayer, Color.RED + "An unexpected error has occurred - " + throwable.getClass().getSimpleName());
+								addChatMessage(Minecraft.getMinecraft().thePlayer, Color.RED + "Unable to create bot. Details logged to console.");
 								throwable.printStackTrace(System.err);
 							}
 						});
@@ -206,6 +212,7 @@ public class CommandAutoMC extends CommandBase
 					catch (Exception e)
 					{
 						e.printStackTrace(System.err);
+						addChatMessage(Minecraft.getMinecraft().thePlayer, Color.RED + "An error occurred. Details logged to console.");
 					}
 				}
 			}

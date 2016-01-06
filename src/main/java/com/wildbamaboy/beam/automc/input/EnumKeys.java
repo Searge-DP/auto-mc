@@ -16,7 +16,8 @@ public enum EnumKeys
 	SHIFT_UP(9, -1, false),
 	SHIFT_DOWN(10, -1, false),
 	LEFT_CLICK(11, -1, false),
-	RIGHT_CLICK(12, -1, false);
+	RIGHT_CLICK(12, -1, false),
+	DROP_ITEM(13, KeyEvent.VK_Q, true);
 	
 	private int id;
 	private int keyCode;
