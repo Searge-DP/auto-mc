@@ -69,6 +69,7 @@ public class GuiLogin extends JFrame implements ActionListener
 		buttonLogin.addActionListener(this);
 		
 		FrameUtils.addAllComponents(this);
+		this.getRootPane().setDefaultButton(buttonLogin);
 	}
 
 	@Override
