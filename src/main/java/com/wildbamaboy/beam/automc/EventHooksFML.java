@@ -18,8 +18,9 @@ public class EventHooksFML
 			counter = 0;
 			
 			EntityPlayer player = Minecraft.getMinecraft().thePlayer;
-			
-			if (player != null && player.isCollidedHorizontally)
+
+			//Make sure we're on the ground before jumping in order to prevent double jumps.
+			if (player != null && player.isCollidedHorizontally && player.onGround)
 			{
 				player.jump();
 			}
