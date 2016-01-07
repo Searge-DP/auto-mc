@@ -10,6 +10,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.wildbamaboy.beam.automc.AutoMC;
 import com.wildbamaboy.beam.automc.Font.Color;
 import com.wildbamaboy.beam.automc.Font.Format;
+import com.wildbamaboy.beam.automc.gui.Gui2FA;
 import com.wildbamaboy.beam.automc.gui.GuiLogin;
 import com.wildbamaboy.beam.automc.input.KeyListener;
 import com.wildbamaboy.beam.automc.input.MouseListener;
@@ -21,10 +22,9 @@ import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ChatComponentText;
 import pro.beam.api.exceptions.BeamException;
+import pro.beam.api.exceptions.user.TwoFactorWrongCodeException;
 import pro.beam.api.exceptions.user.WrongPasswordException;
 import pro.beam.api.resource.BeamUser;
-import pro.beam.api.resource.tetris.RobotInfo;
-import pro.beam.api.services.impl.TetrisService;
 import pro.beam.api.services.impl.UsersService;
 import pro.beam.interactive.net.packet.Protocol;
 import pro.beam.interactive.robot.Robot;
@@ -55,27 +55,22 @@ public class CommandAutoMC extends CommandBase
 
 			if (subcommand.isEmpty() || subcommand.equalsIgnoreCase("help"))
 			{
-				displayHelp(commandSender);
-			}
-
-			else if (subcommand.equalsIgnoreCase("login"))
-			{
-				doLogin(commandSender);
+				displayHelp();
 			}
 
 			else if (subcommand.equals("start"))
 			{
-				doStart(commandSender);
+				doStart();
 			}
 
 			else if (subcommand.equals("stop"))
 			{
-				doStop(commandSender);
+				doStop();
 			}
-			
+
 			else
 			{
-				displayHelp(commandSender);
+				displayHelp();
 			}
 		}
 
@@ -90,24 +85,20 @@ public class CommandAutoMC extends CommandBase
 		}
 	}
 
-	private void doLogin(ICommandSender commandSender) 
-	{
-
-	}
-
-	private void doStart(ICommandSender commandSender)
+	private void doStart()
 	{
 		if (AutoMC.instance.getRobot() != null)
 		{
-			addChatMessage(commandSender, Color.RED + "Bot is currently running. Stop it with /automc stop.");
+			addChatMessage(Color.RED + "Bot is currently running. Stop it with /automc stop.");
 			return;
 		}
-		
-		addChatMessage(commandSender, Color.YELLOW + "Opening login form...");
 
-		//Create our login GUI and open it.
+		addChatMessage(Color.YELLOW + "Opening login form...");
+
+		//Create our login GUI and open it, prepare our 2FA gui as well.
 		final GuiLogin loginGui = new GuiLogin();
-
+		final Gui2FA authGui = new Gui2FA();
+		
 		SwingUtilities.invokeLater(new Runnable()
 		{
 			@Override
@@ -142,9 +133,54 @@ public class CommandAutoMC extends CommandBase
 
 				try
 				{
-					System.out.println("Logging in as " + loginGui.getUsername());
+					AutoMC.getLog().info("Logging in as " + loginGui.getUsername() + ".");
 					user = AutoMC.instance.getBeamAPI().use(UsersService.class)
 							.login(loginGui.getUsername(), String.valueOf(loginGui.getPassword())).checkedGet();
+				}
+
+				catch (TwoFactorWrongCodeException e)
+				{
+					//Prompt for the 2FA code if we fail the first attempt.
+					AutoMC.getLog().info("Prompting for 2FA code.");
+
+					SwingUtilities.invokeLater(new Runnable()
+					{
+						@Override
+						public void run()
+						{
+							authGui.setIsOpen(true);
+						}
+					});
+
+					while (authGui.isOpen)
+					{
+						try
+						{
+							Thread.sleep(250);
+						}
+
+						catch (Exception err)
+						{
+							err.printStackTrace(System.err);
+						}
+					}
+
+					try
+					{
+						user = AutoMC.instance.getBeamAPI().use(UsersService.class)
+								.login(loginGui.getUsername(), String.valueOf(loginGui.getPassword()), authGui.get2FACode()).checkedGet();
+					}
+					
+					catch (TwoFactorWrongCodeException e2)
+					{
+						addChatMessage(Color.RED + "Wrong two-factor authentication code.");
+						return;
+					}
+					
+					catch (BeamException e3)
+					{
+						addChatMessage(Color.RED + "An unknown login error occurred.");						
+					}
 				}
 
 				catch (BeamException e)
@@ -152,12 +188,12 @@ public class CommandAutoMC extends CommandBase
 					//Handle any problems we may encounter.
 					if (e instanceof WrongPasswordException)
 					{
-						addChatMessage(Minecraft.getMinecraft().thePlayer, Color.RED + "Wrong username or password.");	
+						addChatMessage(Color.RED + "Wrong username or password.");	
 					}
 
 					else
 					{
-						addChatMessage(Minecraft.getMinecraft().thePlayer, Color.RED + "An unknown login error occurred.");
+						addChatMessage(Color.RED + "An unknown login error occurred.");
 						e.printStackTrace(System.err);
 					}
 				}
@@ -166,24 +202,39 @@ public class CommandAutoMC extends CommandBase
 				Minecraft.getMinecraft().setIngameFocus();
 
 				//No matter what, set the Beam user for this mod instance.
-				System.out.println("Setting authenticated Beam user " + user.username + ":" + user.id);
+				AutoMC.getLog().info("Setting authenticated Beam user " + user.username + ":" + user.id);
 				AutoMC.instance.setBeamUser(user);
 
 				if (user != null) //And if the user is not null, we logged in. Notify the player.
 				{
-					addChatMessage(Minecraft.getMinecraft().thePlayer, Color.GREEN + "Successfully logged in to Beam.");
-					
-					//Construct the robot.
-					addChatMessage(Minecraft.getMinecraft().thePlayer, Color.YELLOW + "Starting bot...");
+					addChatMessage(Color.GREEN + "Successfully logged in to Beam.");
 
-					System.out.println("Building robot with credentials: " + user.username + ", " + user.channel.id);
+					//Construct the robot.
+					addChatMessage(Color.YELLOW + "Starting bot...");
+
+					AutoMC.getLog().info("Building robot with credentials: " + user.username + ", " + user.channel.id);
+
+					ListenableFuture<Robot> future = null;
 					
-					ListenableFuture<Robot> future = new RobotBuilder()
+					if (authGui.get2FACode().isEmpty())
+					{
+						future = new RobotBuilder()
 							.username(user.username)
 							.password(String.valueOf(loginGui.getPassword()))
 							.channel(user.channel)
 							.build(AutoMC.instance.getBeamAPI());
-
+					}
+					
+					else
+					{
+						future = new RobotBuilder()
+								.username(user.username)
+								.password(String.valueOf(loginGui.getPassword()))
+								.channel(user.channel)
+								.twoFactor(authGui.get2FACode())
+								.build(AutoMC.instance.getBeamAPI());
+					}
+					
 					try
 					{
 						Robot robot = future.get();
@@ -193,9 +244,9 @@ public class CommandAutoMC extends CommandBase
 							@Override 
 							public void onSuccess(Robot robot) 
 							{
-								addChatMessage(Minecraft.getMinecraft().thePlayer, Color.GREEN + "Bot connected successfully.");
+								addChatMessage(Color.GREEN + "Bot connected successfully.");
 								AutoMC.instance.setRobot(robot);
-								
+
 								robot.on(Protocol.Report.class, new MouseListener());
 								robot.on(Protocol.Report.class, new KeyListener());
 							}
@@ -203,7 +254,7 @@ public class CommandAutoMC extends CommandBase
 							@Override 
 							public void onFailure(Throwable throwable) 
 							{
-								addChatMessage(Minecraft.getMinecraft().thePlayer, Color.RED + "Unable to create bot. Details logged to console.");
+								addChatMessage(Color.RED + "Unable to create bot. Details logged to console.");
 								throwable.printStackTrace(System.err);
 							}
 						});
@@ -212,7 +263,7 @@ public class CommandAutoMC extends CommandBase
 					catch (Exception e)
 					{
 						e.printStackTrace(System.err);
-						addChatMessage(Minecraft.getMinecraft().thePlayer, Color.RED + "An error occurred. Details logged to console.");
+						addChatMessage(Color.RED + "An error occurred. Details logged to console.");
 					}
 				}
 			}
@@ -221,65 +272,65 @@ public class CommandAutoMC extends CommandBase
 		authenticationThread.start();
 	}
 
-	private void doStop(ICommandSender commandSender)
+	private void doStop()
 	{
 		Robot robot = AutoMC.instance.getRobot();
-		
+
 		if (robot != null)
 		{
 			try
 			{
-				addChatMessage(commandSender, Color.GREEN + "Disconnecting bot...");
-				
+				addChatMessage(Color.YELLOW + "Disconnecting bot...");
+
 				robot.disconnect();
 				AutoMC.instance.setRobot(null);
-				
-				addChatMessage(commandSender, Color.GREEN + "Disconnected successfully.");
+
+				addChatMessage(Color.GREEN + "Disconnected successfully.");
 			}
-			
+
 			catch (Exception e)
 			{
-				addChatMessage(commandSender, Color.RED + "An unexpected error occurred - " + e.getClass().getSimpleName());
+				addChatMessage(Color.RED + "An unexpected error occurred - " + e.getClass().getSimpleName());
 				e.printStackTrace(System.err);
 			}
 		}
-		
+
 		else //Robot is null, was never set up.
 		{
-			addChatMessage(commandSender, Color.RED + "AutoMC is not running. Use /automc start to begin.");			
+			addChatMessage(Color.RED + "AutoMC is not running. Use /automc start to begin.");			
 		}
 	}
-	
+
 	@Override
 	public int getRequiredPermissionLevel() 
 	{
 		return 0;
 	}
 
-	private void addChatMessage(ICommandSender commandSender, String message)
+	private void addChatMessage(String message)
 	{
-		commandSender.addChatMessage(new ChatComponentText(Color.GOLD + "[AutoMC] " + Format.RESET + message));
+		Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText(Color.GOLD + "[AutoMC] " + Format.RESET + message));
 	}
 
-	private void addChatMessage(ICommandSender commandSender, String message, boolean noPrefix)
+	private void addChatMessage(String message, boolean noPrefix)
 	{
 		if (noPrefix)
 		{
-			commandSender.addChatMessage(new ChatComponentText(message));			
+			Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText(message));			
 		}
 
 		else
 		{
-			addChatMessage(commandSender, message);
+			addChatMessage(message);
 		}
 	}
 
-	private void displayHelp(ICommandSender commandSender)
+	private void displayHelp()
 	{
-		addChatMessage(commandSender, Color.DARKRED + "--- " + Color.GOLD + "AUTOMC COMMANDS" + Color.DARKRED + " ---", true);
+		addChatMessage(Color.DARKRED + "--- " + Color.GOLD + "AUTOMC COMMANDS" + Color.DARKRED + " ---", true);
 
-		addChatMessage(commandSender, Color.WHITE + " /automc help " + Color.GOLD + " - Shows this list of commands.", true);
-		addChatMessage(commandSender, Color.WHITE + " /automc start " + Color.GOLD + " - Starts the AutoMC bot.", true);
-		addChatMessage(commandSender, Color.WHITE + " /automc stop " + Color.GOLD + " - Stops the AutoMC bot.", true);
+		addChatMessage(Color.WHITE + " /automc help " + Color.GOLD + " - Shows this list of commands.", true);
+		addChatMessage(Color.WHITE + " /automc start " + Color.GOLD + " - Starts the AutoMC bot.", true);
+		addChatMessage(Color.WHITE + " /automc stop " + Color.GOLD + " - Stops the AutoMC bot.", true);
 	}
 }
