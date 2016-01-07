@@ -65,7 +65,15 @@ public class KeyListener implements EventListener<Protocol.Report>
 						case INVENTORY: 
 							try
 							{
-								Minecraft.getMinecraft().displayGuiScreen(new GuiInventory(Minecraft.getMinecraft().thePlayer));
+								if (Minecraft.getMinecraft().currentScreen instanceof GuiInventory)
+								{
+									Minecraft.getMinecraft().displayGuiScreen(null);
+								}
+								
+								else
+								{
+									Minecraft.getMinecraft().displayGuiScreen(new GuiInventory(Minecraft.getMinecraft().thePlayer));									
+								}
 							}
 							
 							catch (NullPointerException e)
