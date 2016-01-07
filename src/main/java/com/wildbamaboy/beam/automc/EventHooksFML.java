@@ -9,26 +9,29 @@ public class EventHooksFML
 {
 	private final int INTERVAL_THRESHOLD = 5;
 	private int counter = 0;
-	
+
 	@SubscribeEvent
 	public void clientTickEventHandler(ClientTickEvent event)
 	{
-		if (counter >= INTERVAL_THRESHOLD)
+		if (AutoMC.instance.getRobot() != null)
 		{
-			counter = 0;
-			
-			EntityPlayer player = Minecraft.getMinecraft().thePlayer;
-
-			//Make sure we're on the ground before jumping in order to prevent double jumps.
-			if (player != null && player.isCollidedHorizontally && player.onGround)
+			if (counter >= INTERVAL_THRESHOLD)
 			{
-				player.jump();
+				counter = 0;
+
+				EntityPlayer player = Minecraft.getMinecraft().thePlayer;
+
+				//Make sure we're on the ground before jumping in order to prevent double jumps.
+				if (player != null && player.isCollidedHorizontally && player.onGround)
+				{
+					player.jump();
+				}
 			}
-		}
-		
-		else
-		{
-			counter++;
+
+			else
+			{
+				counter++;
+			}
 		}
 	}
 }
