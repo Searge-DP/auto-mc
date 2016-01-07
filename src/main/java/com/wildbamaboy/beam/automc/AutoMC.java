@@ -1,5 +1,7 @@
 package com.wildbamaboy.beam.automc;
 
+import org.apache.logging.log4j.Logger;
+
 import com.wildbamaboy.beam.automc.command.CommandAutoMC;
 
 import cpw.mods.fml.common.FMLCommonHandler;
@@ -7,6 +9,7 @@ import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.Mod.Instance;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
+import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import net.minecraft.command.CommandHandler;
 import net.minecraftforge.client.ClientCommandHandler;
 import pro.beam.api.BeamAPI;
@@ -18,10 +21,17 @@ public class AutoMC
 {
 	@Instance
 	public static AutoMC instance;
+	public static Logger logger;
 	
 	private static BeamAPI beam;
 	private static BeamUser user;
 	private static Robot robot;
+	
+	@EventHandler
+	public void preInit(FMLPreInitializationEvent event)
+	{
+		logger = event.getModLog();
+	}
 	
 	@EventHandler
 	public void init(FMLInitializationEvent event)
@@ -66,5 +76,10 @@ public class AutoMC
 	public Robot getRobot()
 	{
 		return robot;
+	}
+	
+	public static Logger getLog()
+	{
+		return logger;
 	}
 }
