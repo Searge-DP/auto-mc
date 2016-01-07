@@ -6,6 +6,7 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
 import com.wildbamaboy.beam.automc.Flags;
+import com.wildbamaboy.beam.automc.Font.Color;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiChat;
@@ -13,11 +14,15 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.inventory.GuiContainerCreative;
 import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.ChatComponentText;
 import pro.beam.interactive.event.EventListener;
 import pro.beam.interactive.net.packet.Protocol;
+import pro.beam.interactive.net.packet.Protocol.ProgressUpdate;
 
 public class KeyListener implements EventListener<Protocol.Report> 
 {
+	private final float THRESHOLD = 0.5F;
+	
 	protected Robot keyboard;
 	private boolean shiftFlag;
 
@@ -42,6 +47,7 @@ public class KeyListener implements EventListener<Protocol.Report>
 			//Do not handle reports when chat is open, and flip our shift button off.
 			if (!shiftFlag)
 			{
+				Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText(Color.GOLD + "[AutoMC] " + Color.YELLOW + "Chat is open, bot is disabled."));
 				this.keyboard.keyRelease(KeyEvent.VK_SHIFT);
 				shiftFlag = true;
 			}
@@ -51,9 +57,15 @@ public class KeyListener implements EventListener<Protocol.Report>
 
 		else //Use this to flip the shift flag and allow pressing shift in the chat window.
 		{
-			shiftFlag = false;
+			if (shiftFlag)
+			{
+				Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText(Color.GOLD + "[AutoMC] " + Color.YELLOW + "Chat closed, bot enabled."));
+				shiftFlag = false;	
+			}
 		}
 
+		ProgressUpdate.Builder builder = ProgressUpdate.newBuilder();
+		
 		for (Protocol.Report.TactileInfo tactile : report.getTactileList()) 
 		{
 			EnumKeys key = EnumKeys.getKey(tactile.getCode());
@@ -61,9 +73,11 @@ public class KeyListener implements EventListener<Protocol.Report>
 			double downResults = tactile.getDown().getMean() / report.getQuorum();
 			double upResults = tactile.getUp().getMean() / report.getQuorum();
 			boolean doDown = downResults > upResults;
-
-			if (doDown)
-			{	
+			boolean doFire = downResults > THRESHOLD;
+			float progress = report.getQuorum() > 0 ? (float) (downResults / report.getQuorum()) : 0.0F;
+			
+			if (doDown && doFire)
+			{
 				if (key != EnumKeys.SNEAK)
 				{
 					if (key.getIsMovementKey())
@@ -78,7 +92,12 @@ public class KeyListener implements EventListener<Protocol.Report>
 						case INVENTORY: 
 							try
 							{
-								if (Minecraft.getMinecraft().currentScreen instanceof GuiInventory)
+								if (Minecraft.getMinecraft().currentScreen instanceof GuiChat)
+								{
+									break;
+								}
+								
+								else if (Minecraft.getMinecraft().currentScreen instanceof GuiInventory || Minecraft.getMinecraft().currentScreen instanceof GuiContainerCreative)
 								{
 									Minecraft.getMinecraft().displayGuiScreen(null);
 								}
@@ -127,7 +146,7 @@ public class KeyListener implements EventListener<Protocol.Report>
 				}
 			}
 
-			else //doUp
+			else if (!doDown && doFire)//doUp
 			{
 				if (key.getIsMovementKey())
 				{
@@ -152,6 +171,14 @@ public class KeyListener implements EventListener<Protocol.Report>
 					}
 				}
 			}
+			
+			builder.addProgress(builder.getProgressCount(),
+                    ProgressUpdate.Progress
+                            .newBuilder()
+                            .setCode(tactile.getCode())
+                            .setFired(doFire)
+                            .setTarget(ProgressUpdate.Progress.TargetType.TACTILE)
+                            .setProgress(progress));
 		}
 	}
 
