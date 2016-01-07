@@ -2,6 +2,7 @@ package com.wildbamaboy.beam.automc;
 
 import com.wildbamaboy.beam.automc.command.CommandAutoMC;
 
+import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.Mod.Instance;
@@ -38,6 +39,8 @@ public class AutoMC
 
 		CommandHandler handler = ClientCommandHandler.instance;
 		handler.registerCommand(new CommandAutoMC());
+		
+		FMLCommonHandler.instance().bus().register(new EventHooksFML());
 	}
 
 	public BeamAPI getBeamAPI()
