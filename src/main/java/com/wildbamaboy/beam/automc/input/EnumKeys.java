@@ -9,7 +9,7 @@ public enum EnumKeys
 	LEFT(2, KeyEvent.VK_A, true),
 	RIGHT(3, KeyEvent.VK_D, true),
 	JUMP(4, KeyEvent.VK_SPACE, true),
-	SNEAK(5, KeyEvent.VK_SHIFT, false),
+	SNEAK(5, KeyEvent.VK_SHIFT, true),
 	INVENTORY(6, -1, false),
 	SHIFT_RIGHT(7, -1, false),
 	SHIFT_LEFT(8, -1, false),
