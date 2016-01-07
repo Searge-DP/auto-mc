@@ -33,6 +33,7 @@ public class AutoMC
 		catch (Exception e)
 		{
 			e.printStackTrace(System.err);
+			throw new RuntimeException("Couldn't connect to Beam API. AutoMC cannot be started.");
 		}
 
 		CommandHandler handler = ClientCommandHandler.instance;
