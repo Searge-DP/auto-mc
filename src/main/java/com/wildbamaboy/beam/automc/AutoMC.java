@@ -16,7 +16,7 @@ import pro.beam.api.BeamAPI;
 import pro.beam.api.resource.BeamUser;
 import pro.beam.interactive.robot.Robot;
 
-@Mod(modid = "AutoMC", name = "AutoMC", version = "0.9.1-BETA")
+@Mod(modid = "AutoMC", name = "AutoMC", version = "0.9.2-BETA")
 public class AutoMC
 {
 	@Instance

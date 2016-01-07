@@ -18,7 +18,7 @@ buildscript {
 apply plugin: 'forge'
 apply plugin: 'java'
 
-version = "1.7.10-0.9.1-BETA"
+version = "1.7.10-0.9.2-BETA"
 group= "com.wildbamaboy"
 archivesBaseName = "beam-automc"
 
