@@ -63,7 +63,16 @@ public class KeyListener implements EventListener<Protocol.Report>
 						switch (key)
 						{
 						case INVENTORY: 
-							Minecraft.getMinecraft().displayGuiScreen(new GuiInventory(Minecraft.getMinecraft().thePlayer));
+							try
+							{
+								Minecraft.getMinecraft().displayGuiScreen(new GuiInventory(Minecraft.getMinecraft().thePlayer));
+							}
+							
+							catch (NullPointerException e)
+							{
+								//Pass, not sure what ends up being null here but it happens when the button is spammed.
+							}
+							
 							break;
 						case LEFT_CLICK:
 							keyboard.mousePress(InputEvent.BUTTON1_DOWN_MASK);
