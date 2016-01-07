@@ -4,6 +4,7 @@ import com.wildbamaboy.beam.automc.command.CommandAutoMC;
 
 import net.minecraft.command.CommandHandler;
 import net.minecraftforge.client.ClientCommandHandler;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.Mod.Instance;
@@ -38,6 +39,8 @@ public class AutoMC
 
 		CommandHandler handler = ClientCommandHandler.instance;
 		handler.registerCommand(new CommandAutoMC());
+		
+		FMLCommonHandler.instance().bus().register(new EventHooksFML());
 	}
 
 	public BeamAPI getBeamAPI()
