@@ -4,20 +4,23 @@ import java.awt.event.KeyEvent;
 
 public enum EnumKeys 
 {
-	UP(0, KeyEvent.VK_W, true),
-	DOWN(1, KeyEvent.VK_S, true),
-	LEFT(2, KeyEvent.VK_A, true),
-	RIGHT(3, KeyEvent.VK_D, true),
-	JUMP(4, KeyEvent.VK_SPACE, true),
-	SNEAK(5, KeyEvent.VK_SHIFT, true),
-	INVENTORY(6, -1, false),
-	SHIFT_RIGHT(7, -1, false),
-	SHIFT_LEFT(8, -1, false),
+	// This setup is admittedly a bit strange. Was an early
+	// setup that I see doesn't make much sense. But, it works 
+	// for now.
+	UP(KeyEvent.VK_W, KeyEvent.VK_W, true),
+	DOWN(KeyEvent.VK_S, KeyEvent.VK_S, true),
+	LEFT(KeyEvent.VK_A, KeyEvent.VK_A, true),
+	RIGHT(KeyEvent.VK_D, KeyEvent.VK_D, true),
+	JUMP(KeyEvent.VK_SPACE, KeyEvent.VK_SPACE, true),
+	SNEAK(KeyEvent.VK_SHIFT, KeyEvent.VK_SHIFT, true),
+	INVENTORY(KeyEvent.VK_I, -1, false),
+	SHIFT_RIGHT(KeyEvent.VK_RIGHT, -1, false),
+	SHIFT_LEFT(KeyEvent.VK_LEFT, -1, false),
 	SHIFT_UP(9, -1, false),
 	SHIFT_DOWN(10, -1, false),
 	LEFT_CLICK(11, -1, false),
 	RIGHT_CLICK(12, -1, false),
-	DROP_ITEM(13, KeyEvent.VK_Q, true);
+	DROP_ITEM(KeyEvent.VK_Q, KeyEvent.VK_Q, true);
 	
 	private int id;
 	private int keyCode;
