@@ -13,13 +13,19 @@ public class EventHooksFML
 	@SubscribeEvent
 	public void clientTickEventHandler(ClientTickEvent event)
 	{
-		if (AutoMC.instance.getRobot() != null)
+		if (counter >= INTERVAL_THRESHOLD)
 		{
-			if (counter >= INTERVAL_THRESHOLD)
-			{
+			if (AutoMC.instance.getRobot() != null)
+			{	
+				EntityPlayer player = Minecraft.getMinecraft().thePlayer;
 				counter = 0;
 
-				EntityPlayer player = Minecraft.getMinecraft().thePlayer;
+				//Disable pausing on losing focus.
+				if (Minecraft.getMinecraft().gameSettings.pauseOnLostFocus)
+				{
+					Minecraft.getMinecraft().gameSettings.pauseOnLostFocus = false;
+					AutoMC.getLog().info("Disabled game pause on losing focus.");
+				}
 
 				//Make sure we're on the ground before jumping in order to prevent double jumps.
 				if (player != null && player.isCollidedHorizontally && player.onGround)
@@ -27,11 +33,20 @@ public class EventHooksFML
 					player.jump();
 				}
 			}
-
-			else
+			
+			else //Not connected so reset any of our changed game settings.
 			{
-				counter++;
+				if (!Minecraft.getMinecraft().gameSettings.pauseOnLostFocus)
+				{
+					Minecraft.getMinecraft().gameSettings.pauseOnLostFocus = true;
+					AutoMC.getLog().info("Enabled game pause on losing focus.");
+				}
 			}
+		}
+		
+		else
+		{
+			counter++;
 		}
 	}
 }

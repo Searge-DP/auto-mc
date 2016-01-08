@@ -3,6 +3,7 @@ package com.wildbamaboy.beam.automc;
 import org.apache.logging.log4j.Logger;
 
 import com.wildbamaboy.beam.automc.command.CommandAutoMC;
+import com.wildbamaboy.beam.automc.input.KeyInterpreter;
 
 import net.minecraft.command.CommandHandler;
 import net.minecraftforge.client.ClientCommandHandler;
@@ -21,6 +22,7 @@ public class AutoMC
 {
 	@Instance
 	public static AutoMC instance;
+	public static KeyInterpreter keyInterpreter;
 	public static Logger logger;
 	
 	private static BeamAPI beam;
@@ -31,6 +33,7 @@ public class AutoMC
 	public void preInit(FMLPreInitializationEvent event)
 	{
 		logger = event.getModLog();
+		keyInterpreter = new KeyInterpreter();
 	}
 	
 	@EventHandler

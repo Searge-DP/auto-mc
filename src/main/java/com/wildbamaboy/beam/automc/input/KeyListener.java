@@ -4,7 +4,10 @@ import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
+import com.wildbamaboy.beam.automc.AutoMC;
 import com.wildbamaboy.beam.automc.Flags;
 import com.wildbamaboy.beam.automc.Font.Color;
 
@@ -22,12 +25,15 @@ import pro.beam.interactive.net.packet.Protocol.ProgressUpdate;
 public class KeyListener implements EventListener<Protocol.Report> 
 {
 	private final float THRESHOLD = 0.5F;
-	
+
 	protected Robot keyboard;
+	private KeyInterpreter interpreter;
 	private boolean shiftFlag;
 
 	public KeyListener() 
 	{
+		interpreter = AutoMC.keyInterpreter;
+
 		try 
 		{
 			this.keyboard = new Robot();
@@ -51,7 +57,7 @@ public class KeyListener implements EventListener<Protocol.Report>
 				this.keyboard.keyRelease(KeyEvent.VK_SHIFT);
 				shiftFlag = true;
 			}
-			
+
 			return;
 		}
 
@@ -65,38 +71,44 @@ public class KeyListener implements EventListener<Protocol.Report>
 		}
 
 		ProgressUpdate.Builder builder = ProgressUpdate.newBuilder();
-		
+
 		for (Protocol.Report.TactileInfo tactile : report.getTactileList()) 
 		{
-			EnumKeys key = EnumKeys.getKey(tactile.getCode());
+			// Ask our interpreter which Beam key was pressed.
+			BeamKeyBridge key = interpreter.getKey(tactile.getCode());
 
+			// Determine whether we are going to press down or release the key.
 			double downResults = tactile.getDown().getMean() / report.getQuorum();
 			double upResults = tactile.getUp().getMean() / report.getQuorum();
 			boolean doDown = downResults > upResults;
-			boolean doFire = downResults > THRESHOLD;
+
+			// Now determine whether or not the button will fire.
+			// Always fire when the button is coming up. If it's going down, check the needed threshold.
+			// The calculated progress is reported to Beam so viewers can see what is being pressed.
+			boolean doFire = doDown ? downResults > THRESHOLD : true;
 			float progress = report.getQuorum() > 0 ? (float) (downResults / report.getQuorum()) : 0.0F;
-			
+
 			if (doDown && doFire)
 			{
-				if (key != EnumKeys.SNEAK)
+				if (key != interpreter.keySneak)
 				{
 					if (key.getIsMovementKey())
 					{
-						this.keyboard.keyPress(key.keyCode());
+						key.pressKey();
+						System.out.println(key.getMinecraftKeybinding().getIsKeyPressed());
 					}
 
-					else
+					else //Handle special cases.
 					{
-						switch (key)
+						if (key == interpreter.keyInventory)
 						{
-						case INVENTORY: 
 							try
 							{
 								if (Minecraft.getMinecraft().currentScreen instanceof GuiChat)
 								{
 									break;
 								}
-								
+
 								else if (Minecraft.getMinecraft().currentScreen instanceof GuiInventory || Minecraft.getMinecraft().currentScreen instanceof GuiContainerCreative)
 								{
 									Minecraft.getMinecraft().displayGuiScreen(null);
@@ -112,35 +124,60 @@ public class KeyListener implements EventListener<Protocol.Report>
 							{
 								//Pass, not sure what ends up being null here but it happens when the button is spammed.
 							}
+						}
 
-							break;
-						case LEFT_CLICK:
-							keyboard.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-							break;
-						case RIGHT_CLICK:
-							keyboard.mousePress(InputEvent.BUTTON2_DOWN_MASK);
-							break;
+						else if (key == interpreter.keyLeftClick)
+						{
+							try
+							{
+								Method clickMouse = Minecraft.getMinecraft().getClass().getDeclaredMethod("clickMouse");
+								clickMouse.setAccessible(true);
+								clickMouse.invoke(Minecraft.getMinecraft());
+							}
 
-						case SHIFT_LEFT:
-						case SHIFT_RIGHT:
-						case SHIFT_UP:
-						case SHIFT_DOWN:
+							catch (Exception e)
+							{
+								e.printStackTrace(System.err);
+							}
+						}
+
+						else if (key == interpreter.keyRightClick)
+						{
+							try
+							{
+								Method clickMouse = Minecraft.getMinecraft().getClass().getDeclaredMethod("rightClickMouse");
+								clickMouse.setAccessible(true);
+								clickMouse.invoke(Minecraft.getMinecraft());
+							}
+
+							catch (Exception e)
+							{
+								e.printStackTrace(System.err);
+							}
+							
+							//keyboard.mousePress(InputEvent.BUTTON2_DOWN_MASK);
+						}
+
+						else if (key == interpreter.keySelectionLeft || key == interpreter.keySelectionRight)
+						{
 							handleShifterKey(key);
-							break;
+						}
 
-						default: 
+						else
+						{
 							System.err.println("No handler for key!: " + key);
 						}
 					}
 				}
 
-				else if (key == EnumKeys.SNEAK && !Flags.IS_SNEAKING)
+				else if (key == interpreter.keySneak && !Flags.IS_SNEAKING)
 				{
 					Flags.IS_SNEAKING = true;
-					this.keyboard.keyPress(key.keyCode());
+					key.pressKey();
+					//this.keyboard.keyPress(key.keyCode());
 				}
 
-				else if (key == EnumKeys.SNEAK && Flags.IS_SNEAKING)
+				else if (key == interpreter.keySneak && Flags.IS_SNEAKING)
 				{
 					Flags.IS_SNEAKING = false;
 				}
@@ -150,39 +187,41 @@ public class KeyListener implements EventListener<Protocol.Report>
 			{
 				if (key.getIsMovementKey())
 				{
-					if (key != EnumKeys.SNEAK || (key == EnumKeys.SNEAK && !Flags.IS_SNEAKING))
+					if (key != interpreter.keySneak || (key == interpreter.keySneak && !Flags.IS_SNEAKING))
 					{
-						this.keyboard.keyRelease(key.keyCode());
+						key.releaseKey();
+						System.out.println("KEY UP");
+						//						this.keyboard.keyRelease(key.keyCode());
 					}
 				}
-
-				else
-				{
-					switch (key)
-					{
-					case LEFT_CLICK:
-						keyboard.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-						break;
-					case RIGHT_CLICK:
-						keyboard.mouseRelease(InputEvent.BUTTON2_DOWN_MASK);
-						break;
-					default: 
-						System.err.println("No handler for key!: " + key);
-					}
-				}
+				//
+				//				else
+				//				{
+				//					switch (key)
+				//					{
+				//					case LEFT_CLICK:
+				//						keyboard.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+				//						break;
+				//					case RIGHT_CLICK:
+				//						keyboard.mouseRelease(InputEvent.BUTTON2_DOWN_MASK);
+				//						break;
+				//					default: 
+				//						System.err.println("No handler for key!: " + key);
+				//					}
+				//				}
 			}
-			
+
 			builder.addProgress(builder.getProgressCount(),
-                    ProgressUpdate.Progress
-                            .newBuilder()
-                            .setCode(tactile.getCode())
-                            .setFired(doFire)
-                            .setTarget(ProgressUpdate.Progress.TargetType.TACTILE)
-                            .setProgress(progress));
+					ProgressUpdate.Progress
+					.newBuilder()
+					.setCode(tactile.getCode())
+					.setFired(doFire)
+					.setTarget(ProgressUpdate.Progress.TargetType.TACTILE)
+					.setProgress(progress));
 		}
 	}
 
-	private void handleShifterKey(EnumKeys key) 
+	private void handleShifterKey(BeamKeyBridge key) 
 	{
 		EntityPlayer player = Minecraft.getMinecraft().thePlayer;
 		GuiScreen currentScreen = Minecraft.getMinecraft().currentScreen;
@@ -228,7 +267,7 @@ public class KeyListener implements EventListener<Protocol.Report>
 
 		else if (currentScreen == null) //'Ingame' screen
 		{
-			int indexChange = key == EnumKeys.SHIFT_LEFT ? -1 : key == EnumKeys.SHIFT_RIGHT ? 1 : 0;
+			int indexChange = key == interpreter.keySelectionLeft ? -1 : key == interpreter.keySelectionRight ? 1 : 0;
 			player.inventory.changeCurrentItem(player.inventory.currentItem + indexChange);
 		}
 	}

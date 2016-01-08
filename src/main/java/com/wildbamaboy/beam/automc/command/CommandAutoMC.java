@@ -180,6 +180,7 @@ public class CommandAutoMC extends CommandBase
 					catch (BeamException e3)
 					{
 						addChatMessage(Color.RED + "An unknown login error occurred.");						
+						return;
 					}
 				}
 
@@ -188,13 +189,15 @@ public class CommandAutoMC extends CommandBase
 					//Handle any problems we may encounter.
 					if (e instanceof WrongPasswordException)
 					{
-						addChatMessage(Color.RED + "Wrong username or password.");	
+						addChatMessage(Color.RED + "Wrong username or password.");
+						return;
 					}
 
 					else
 					{
 						addChatMessage(Color.RED + "An unknown login error occurred.");
 						e.printStackTrace(System.err);
+						return;
 					}
 				}
 
