@@ -73,7 +73,7 @@ public class KeyListener implements EventListener<Protocol.Report>
 			double downResults = tactile.getDown().getMean() / report.getQuorum();
 			double upResults = tactile.getUp().getMean() / report.getQuorum();
 			boolean doDown = downResults > upResults;
-			boolean doFire = downResults > THRESHOLD;
+			boolean doFire = doDown ? downResults > THRESHOLD : true;
 			float progress = report.getQuorum() > 0 ? (float) (downResults / report.getQuorum()) : 0.0F;
 			
 			if (doDown && doFire)
